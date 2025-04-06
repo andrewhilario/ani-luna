@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+  images: {
+    domains: ["static1.animekai.to"]
+  }
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
