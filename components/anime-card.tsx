@@ -8,6 +8,7 @@ import Image from "next/image";
 import useBookmark from "@/hooks/bookmark";
 import { useEffect } from "react";
 import useAnimeInfo from "@/hooks/info";
+import { useSession } from "next-auth/react";
 
 interface AnimeCardProps {
   anime: {
@@ -27,6 +28,7 @@ interface AnimeCardProps {
 }
 
 export default function AnimeCard({ anime }: AnimeCardProps) {
+  const { data: session } = useSession();
   const { addBookMark, bookmarkDetail, bookmarkDetailLoading } = useBookmark(
     anime.id
   );
@@ -50,7 +52,7 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
   };
 
   return (
-    <Link href={`/anime/${anime.id}`}>
+    <Link href={`/anime/${anime.id ?? info.id}`}>
       <Card className="bg-gray-900 border-gray-800 overflow-hidden group transition-all hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
         <div className="relative aspect-[2/3]">
           <img
@@ -73,7 +75,9 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
               onClick={handleBookmark}
               disabled={bookmarkDetailLoading}
             >
-              {bookmarkDetail?.anime?.anime_id === anime.id || info?.id ? (
+              {(bookmarkDetail?.anime?.anime_id === anime.id ||
+                info?.id === anime.id) &&
+              !!session ? (
                 <BookmarkCheck className="w-5 h-5" />
               ) : (
                 <Bookmark className="w-5 h-5" />

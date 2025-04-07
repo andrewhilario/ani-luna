@@ -19,6 +19,7 @@ import {
   ThumbsUp
 } from "lucide-react";
 import useAnimeInfo from "@/hooks/info";
+import Header from "@/components/header";
 
 export default function AnimePage({ params }: { params: { id: string } }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -39,53 +40,7 @@ export default function AnimePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="container mx-auto py-6 px-4">
-        <div className="flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-blue-500">
-            AniLuna
-          </Link>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/" className="hover:text-blue-400 transition-colors">
-                Home
-              </Link>
-              <Link
-                href="/discover"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Discover
-              </Link>
-              <Link
-                href="/genres"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Genres
-              </Link>
-              <Link
-                href="/schedule"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Schedule
-              </Link>
-            </nav>
-            <div className="flex items-center gap-2">
-              <Link href="/login">
-                <Button
-                  variant="ghost"
-                  className="hover:text-blue-400 transition-colors"
-                >
-                  Login
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {animeLoading ? (
         <div className="container mx-auto px-4 py-12">
