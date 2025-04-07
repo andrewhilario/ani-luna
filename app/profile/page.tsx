@@ -7,9 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BookmarkCheck, Edit, LogOut, Settings } from "lucide-react";
 import AnimeCard from "@/components/anime-card";
 import Header from "@/components/header";
+import useBookmark from "@/hooks/bookmark";
+import { useSession } from "next-auth/react";
+import useProfile from "@/hooks/profile";
 
 export default function ProfilePage() {
-  // Mock user data - in a real app, this would be fetched from an API
+  const { data: session } = useSession();
+  const { bookmarkList } = useBookmark();
+  const { profile, profileLoading } = useProfile();
+
   const user = {
     name: "AnimeEnthusiast",
     avatar: "/placeholder.svg?height=100&width=100",
@@ -101,22 +107,37 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white ">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 h-screen">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-1/4 lg:w-1/5">
             <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center">
-              <Avatar className="w-24 h-24 mb-4">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-              </Avatar>
-              <h1 className="text-xl font-bold mb-1">{user.name}</h1>
-              <p className="text-sm text-gray-400 mb-4">
-                Member since {user.joinDate}
-              </p>
-
+              {profileLoading ? (
+                <div className="animate-pulse">
+                  <Avatar className="w-24 h-24 mb-4">
+                    <AvatarImage src={user.avatar} alt="User Avatar" />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+              ) : (
+                <>
+                  <Avatar className="w-24 h-24 mb-4">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback
+                      className="bg-gray-700 text-gray-300 font-bold"
+                      delayMs={600}
+                    >
+                      {profile.username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h1 className="text-xl font-bold mb-1">{profile.username}</h1>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Member since {profile.member_since}
+                  </p>
+                </>
+              )}
               <div className="w-full space-y-2 mt-4">
                 <Button
                   variant="outline"
@@ -166,8 +187,8 @@ export default function ProfilePage() {
               <TabsContent value="bookmarks">
                 <h2 className="text-2xl font-bold mb-6">My Bookmarks</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {user.bookmarkedAnime.map((anime) => (
-                    <AnimeCard key={anime.id} anime={anime as any} />
+                  {bookmarkList?.results.map((anime: any) => (
+                    <AnimeCard key={anime.id} anime={anime.anime as any} />
                   ))}
                 </div>
               </TabsContent>

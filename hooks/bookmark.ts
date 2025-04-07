@@ -96,10 +96,10 @@ export default function useBookmark(id?: string) {
     }
   });
 
-  const { data: bookmarList, isLoading: isBookmarkLoading } = useQuery({
+  const { data: bookmarkList, isLoading: isBookmarkLoading } = useQuery({
     queryKey: ["bookmark-list"],
     queryFn: async () => {
-      const response = await fetch(`${BACKEND_API_URL}/bookmarks`, {
+      const response = await fetch(`${BACKEND_API_URL}/bookmarks/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session?.token}`
@@ -116,7 +116,7 @@ export default function useBookmark(id?: string) {
       }
     },
     refetchOnWindowFocus: false,
-    enabled: !!session?.token // Only run this query if the user is authenticated
+    enabled: !!session?.token
   });
 
   const { data: bookmarkDetail, isLoading: bookmarkDetailLoading } = useQuery({
@@ -151,7 +151,7 @@ export default function useBookmark(id?: string) {
   return {
     addBookMark,
     deleteBookmark,
-    bookmarList,
+    bookmarkList,
     isBookmarkLoading,
     bookmarkDetail,
     bookmarkDetailLoading

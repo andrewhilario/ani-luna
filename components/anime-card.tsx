@@ -7,6 +7,7 @@ import { Bookmark, BookmarkCheck } from "lucide-react";
 import Image from "next/image";
 import useBookmark from "@/hooks/bookmark";
 import { useEffect } from "react";
+import useAnimeInfo from "@/hooks/info";
 
 interface AnimeCardProps {
   anime: {
@@ -21,12 +22,17 @@ interface AnimeCardProps {
     dub: number;
     episodes: number;
     description?: string;
+    anime_id?: string;
   };
 }
 
 export default function AnimeCard({ anime }: AnimeCardProps) {
   const { addBookMark, bookmarkDetail, bookmarkDetailLoading } = useBookmark(
     anime.id
+  );
+
+  const { anime: info, animeLoading } = useAnimeInfo(
+    anime.anime_id ?? anime.id
   );
 
   const handleBookmark = (e: React.MouseEvent) => {
@@ -48,8 +54,8 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
       <Card className="bg-gray-900 border-gray-800 overflow-hidden group transition-all hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
         <div className="relative aspect-[2/3]">
           <img
-            src={anime.image || anime.banner}
-            alt={anime.title}
+            src={anime.image || anime.banner || info?.banner || info?.image}
+            alt={anime.title || info?.title}
             className="w-full h-full object-cover"
             loading="lazy"
             width={300}
@@ -59,14 +65,15 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               className={`p-1.5 rounded-full ${
-                bookmarkDetail?.anime?.anime_id === anime.id
+                bookmarkDetail?.anime?.anime_id === anime.id ||
+                info?.id === anime.id
                   ? "bg-blue-600/80 text-white"
                   : "bg-black/60 hover:bg-blue-600/80 text-gray-400"
               }`}
               onClick={handleBookmark}
               disabled={bookmarkDetailLoading}
             >
-              {bookmarkDetail?.anime?.anime_id === anime.id ? (
+              {bookmarkDetail?.anime?.anime_id === anime.id || info?.id ? (
                 <BookmarkCheck className="w-5 h-5" />
               ) : (
                 <Bookmark className="w-5 h-5" />
@@ -83,7 +90,9 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
           </div>
         </div>
         <CardContent className="p-2">
-          <h3 className="font-medium text-sm line-clamp-2">{anime.title}</h3>
+          <h3 className="font-medium text-sm line-clamp-2">
+            {anime.title || info?.title}
+          </h3>
         </CardContent>
       </Card>
     </Link>
