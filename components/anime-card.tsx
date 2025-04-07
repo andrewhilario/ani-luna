@@ -3,8 +3,10 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bookmark } from "lucide-react";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import Image from "next/image";
+import useBookmark from "@/hooks/bookmark";
+import { useEffect } from "react";
 
 interface AnimeCardProps {
   anime: {
@@ -18,10 +20,29 @@ interface AnimeCardProps {
     sub: number;
     dub: number;
     episodes: number;
+    description?: string;
   };
 }
 
 export default function AnimeCard({ anime }: AnimeCardProps) {
+  const { addBookMark, bookmarkDetail, bookmarkDetailLoading } = useBookmark(
+    anime.id
+  );
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const releaseDate = new Date().toISOString().split("T")[0];
+
+    addBookMark({
+      anime: {
+        anime_id: anime.id,
+        title: anime.title,
+        description: anime.description ?? "",
+        release_date: releaseDate
+      }
+    });
+  };
+
   return (
     <Link href={`/anime/${anime.id}`}>
       <Card className="bg-gray-900 border-gray-800 overflow-hidden group transition-all hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
@@ -37,13 +58,19 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
           />
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              className="bg-black/60 p-1.5 rounded-full hover:bg-blue-600/80"
-              onClick={(e) => {
-                e.preventDefault();
-                // Bookmark functionality would be implemented here
-              }}
+              className={`p-1.5 rounded-full ${
+                bookmarkDetail?.anime?.anime_id === anime.id
+                  ? "bg-blue-600/80 text-white"
+                  : "bg-black/60 hover:bg-blue-600/80 text-gray-400"
+              }`}
+              onClick={handleBookmark}
+              disabled={bookmarkDetailLoading}
             >
-              <Bookmark className="h-4 w-4" />
+              {bookmarkDetail?.anime?.anime_id === anime.id ? (
+                <BookmarkCheck className="w-5 h-5" />
+              ) : (
+                <Bookmark className="w-5 h-5" />
+              )}
             </button>
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent pt-10 pb-2 px-2">

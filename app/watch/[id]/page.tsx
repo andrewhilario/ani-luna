@@ -1,13 +1,14 @@
-"use client"
+/* eslint-disable @next/next/no-img-element */
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Bookmark,
@@ -20,71 +21,52 @@ import {
   Settings,
   ThumbsUp,
   Volume2,
-  VolumeX,
-} from "lucide-react"
+  VolumeX
+} from "lucide-react";
+import useAnimeWatchInfo from "@/hooks/watch";
+import useAnimeInfo from "@/hooks/info";
 
 export default function WatchPage({ params }: { params: { id: string } }) {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
-  const [showComments, setShowComments] = useState(true)
-  const [commentText, setCommentText] = useState("")
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showComments, setShowComments] = useState(true);
+  const [commentText, setCommentText] = useState("");
 
-  // Mock data - in a real app, this would be fetched based on the ID
-  const anime = {
-    id: Number.parseInt(params.id),
-    title: "Attack on Titan: Final Season",
-    episode: 1,
-    episodeTitle: "The Other Side of the Sea",
-    nextEpisode: 2,
-    comments: [
-      {
-        id: 1,
-        user: { name: "AnimeKing42", avatar: "/placeholder.svg?height=40&width=40" },
-        text: "This episode was incredible! The animation quality is top-notch.",
-        time: "2 days ago",
-        likes: 24,
-      },
-      {
-        id: 2,
-        user: { name: "MangaReader", avatar: "/placeholder.svg?height=40&width=40" },
-        text: "I've read the manga and they did an amazing job adapting this scene.",
-        time: "1 week ago",
-        likes: 18,
-      },
-      {
-        id: 3,
-        user: { name: "OtakuGirl", avatar: "/placeholder.svg?height=40&width=40" },
-        text: "The opening scene gave me chills. Can't wait for the next episode!",
-        time: "2 weeks ago",
-        likes: 15,
-      },
-    ],
-  }
+  const { watchAnime, watchAnimeLoading } = useAnimeWatchInfo(params.id);
+
+  const decodedString = decodeURIComponent(params.id);
+  const info = decodedString.split("$")[0];
+
+  console.log("Watch Anime:", watchAnime?.[0].url);
+  const { anime, animeLoading } = useAnimeInfo(info);
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying)
-  }
+    setIsPlaying(!isPlaying);
+  };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted)
-  }
+    setIsMuted(!isMuted);
+  };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // In a real app, this would send the comment to an API
-    console.log("Comment submitted:", commentText)
-    setCommentText("")
-  }
+    console.log("Comment submitted:", commentText);
+    setCommentText("");
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="relative">
         <div className="bg-gray-900 aspect-video relative">
-          <video className="w-full h-full">
-            <source
-              src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-              type="video/mp4"
-            />
+          <video
+            className="w-full h-full"
+            autoPlay={isPlaying}
+            muted={isMuted}
+            controls={false}
+            onClick={togglePlay}
+          >
+            <source src={watchAnime?.[0].url} type="video/mp4" />
           </video>
 
           {/* Video Controls */}
@@ -93,21 +75,33 @@ export default function WatchPage({ params }: { params: { id: string } }) {
               onClick={togglePlay}
               className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center"
             >
-              {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+              {isPlaying ? (
+                <Pause className="h-8 w-8" />
+              ) : (
+                <Play className="h-8 w-8" />
+              )}
             </button>
           </div>
 
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <div className="flex items-center gap-4 mb-2">
               <button onClick={togglePlay}>
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                {isPlaying ? (
+                  <Pause className="h-5 w-5" />
+                ) : (
+                  <Play className="h-5 w-5" />
+                )}
               </button>
               <button>
                 <Forward className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-2">
                 <button onClick={toggleMute}>
-                  {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  {isMuted ? (
+                    <VolumeX className="h-5 w-5" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
                 </button>
                 <Slider
                   defaultValue={[70]}
@@ -140,15 +134,15 @@ export default function WatchPage({ params }: { params: { id: string } }) {
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="w-full lg:w-2/3">
             <div className="flex items-center gap-4 mb-6">
-              <Link href={`/anime/${anime.id}`}>
+              <Link href={`/anime/${anime?.id}`}>
                 <Button variant="ghost" className="p-2">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl font-bold">{anime.title}</h1>
+                <h1 className="text-xl font-bold">{anime?.title}</h1>
                 <div className="text-sm text-gray-400">
-                  Episode {anime.episode}: {anime.episodeTitle}
+                  Episode {anime?.number}: {anime?.title}
                 </div>
               </div>
               <div className="ml-auto">
@@ -162,15 +156,21 @@ export default function WatchPage({ params }: { params: { id: string } }) {
               <Button variant="outline" className="border-gray-700">
                 Previous Episode
               </Button>
-              <Link href={`/watch/${anime.id}?episode=${anime.nextEpisode}`}>
-                <Button className="bg-blue-600 hover:bg-blue-700">Next Episode</Button>
+              <Link href={`/watch/${anime?.id}?episode=${anime?.nextEpisode}`}>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Next Episode
+                </Button>
               </Link>
             </div>
 
             <div className="bg-gray-900 rounded-lg p-4 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Comments</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowComments(!showComments)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowComments(!showComments)}
+                >
                   {showComments ? (
                     <>
                       <ChevronUp className="h-4 w-4 mr-1" /> Hide
@@ -193,23 +193,32 @@ export default function WatchPage({ params }: { params: { id: string } }) {
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                       />
-                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      <Button
+                        type="submit"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
                         Post Comment
                       </Button>
                     </form>
                   </div>
 
-                  <div className="space-y-6">
-                    {anime.comments.map((comment) => (
+                  {/* <div className="space-y-6">
+                    {anime?.comments.map((comment: any) => (
                       <div key={comment.id} className="flex gap-4">
                         <Avatar>
                           <AvatarImage src={comment.user.avatar} />
-                          <AvatarFallback>{comment.user.name.substring(0, 2)}</AvatarFallback>
+                          <AvatarFallback>
+                            {comment.user.name.substring(0, 2)}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">{comment.user.name}</span>
-                            <span className="text-xs text-gray-400">{comment.time}</span>
+                            <span className="font-semibold">
+                              {comment.user.name}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {comment.time}
+                            </span>
                           </div>
                           <p className="text-gray-200 mb-2">{comment.text}</p>
                           <div className="flex items-center gap-1 text-sm text-gray-400">
@@ -218,12 +227,14 @@ export default function WatchPage({ params }: { params: { id: string } }) {
                               <span>{comment.likes}</span>
                             </button>
                             <span className="mx-2">•</span>
-                            <button className="hover:text-blue-400">Reply</button>
+                            <button className="hover:text-blue-400">
+                              Reply
+                            </button>
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </div> */}
                 </>
               )}
             </div>
@@ -233,12 +244,15 @@ export default function WatchPage({ params }: { params: { id: string } }) {
             <h2 className="text-lg font-semibold mb-4">Up Next</h2>
             <div className="space-y-3">
               {Array.from({ length: 5 }, (_, i) => (
-                <Link key={i} href={`/watch/${anime.id}?episode=${anime.episode + i + 1}`}>
+                <Link
+                  key={i}
+                  href={`/watch/${anime?.id}?episode=${anime?.episode + i + 1}`}
+                >
                   <div className="bg-gray-900 rounded-lg overflow-hidden flex hover:bg-gray-800 transition-colors">
                     <div className="w-40 relative">
                       <img
                         src={`/placeholder.svg?height=90&width=160`}
-                        alt={`Episode ${anime.episode + i + 1}`}
+                        alt={`Episode ${anime?.episode + i + 1}`}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
@@ -246,7 +260,9 @@ export default function WatchPage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                     <div className="p-3">
-                      <div className="text-sm font-medium mb-1">Episode {anime.episode + i + 1}</div>
+                      <div className="text-sm font-medium mb-1">
+                        Episode {anime?.episode + i + 1}
+                      </div>
                       <div className="text-xs text-gray-400">23 min</div>
                     </div>
                   </div>
@@ -257,6 +273,5 @@ export default function WatchPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

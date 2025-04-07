@@ -8,12 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
     rememberMe: false
   });
@@ -27,10 +33,35 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, rememberMe: checked }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Handle login logic here
-    console.log("Login form submitted:", formData);
+    setLoading(true);
+
+    const { username, password, rememberMe } = formData;
+
+    // Example API call
+    await signIn("credentials", {
+      username: username,
+      password: password,
+      redirect: false
+    }).then((callback) => {
+      if (callback?.error) {
+        toast({
+          title: "Login failed",
+          description: "Invalid username or password",
+          variant: "destructive"
+        });
+        setLoading(false);
+      } else {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+          variant: "default"
+        });
+        router.push("/");
+      }
+    });
   };
 
   return (
@@ -48,15 +79,15 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-200">
-                  Email
+                <Label htmlFor="username" className="text-gray-200">
+                  Username
                 </Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={formData.username}
                   onChange={handleChange}
                   required
                   className="bg-gray-800 border-gray-700 text-white"
@@ -111,12 +142,25 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Sign In
-              </Button>
+              {loading ? (
+                <Button
+                  type="submit"
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
+                  disabled={true}
+                >
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="mr-2 animate-spin" />
+                    Loading...
+                  </span>
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </form>
 

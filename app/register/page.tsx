@@ -8,11 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import useSignUp from "@/hooks/signup";
 
 export default function RegisterPage() {
+  const { toast } = useToast();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { signUp, loading, setLoading } = useSignUp();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -30,15 +35,42 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, agreeTerms: checked }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match");
       return;
     }
     // Handle registration logic here
-    console.log("Registration form submitted:", formData);
+    const { username, email, password, agreeTerms } = formData;
+    if (!agreeTerms) {
+      toast({
+        title: "Terms not accepted",
+        description: "You must accept the terms and conditions to register.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Example API call
+    await signUp({
+      username: username,
+      email: email,
+      password: password
+    });
+
+    // Reset form
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      agreeTerms: false
+    });
+    setLoading(false);
   };
 
   return (
@@ -165,12 +197,21 @@ export default function RegisterPage() {
                 </Label>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Create Account
-              </Button>
+              {loading ? (
+                <Button type="submit" className="w-full mt-4" disabled={true}>
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="mr-2 animate-spin" />
+                    Signing Up...
+                  </span>
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Create Account
+                </Button>
+              )}
             </div>
           </form>
 

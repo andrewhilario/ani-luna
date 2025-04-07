@@ -2,14 +2,14 @@ import { API_URL } from "@/constant/api";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 
-export default function useNewReleases() {
+export default function useMostFavorite() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
 
-  const { data: newReleases, isLoading: newReleasesLoading } = useQuery({
+  const { data: mostFavorite, isLoading: mostFavoriteLoading } = useQuery({
     queryKey: ["recent-added", tab],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/recent-added`);
+      const response = await fetch(`${API_URL}/most-favorite`);
 
       const data = await response.json();
 
@@ -25,7 +25,7 @@ export default function useNewReleases() {
   });
 
   return {
-    newReleases,
-    newReleasesLoading
+    mostFavorite,
+    mostFavoriteLoading
   };
 }

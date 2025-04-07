@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BookmarkCheck, Edit, LogOut, Settings } from "lucide-react";
 import AnimeCard from "@/components/anime-card";
+import Header from "@/components/header";
 
 export default function ProfilePage() {
   // Mock user data - in a real app, this would be fetched from an API
@@ -100,38 +102,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="container mx-auto py-6 px-4">
-        <div className="flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-blue-500">
-            AniLuna
-          </Link>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/" className="hover:text-blue-400 transition-colors">
-                Home
-              </Link>
-              <Link
-                href="/discover"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Discover
-              </Link>
-              <Link
-                href="/genres"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Genres
-              </Link>
-              <Link
-                href="/schedule"
-                className="hover:text-blue-400 transition-colors"
-              >
-                Schedule
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-8">
@@ -196,7 +167,7 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-bold mb-6">My Bookmarks</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {user.bookmarkedAnime.map((anime) => (
-                    <AnimeCard key={anime.id} anime={anime} />
+                    <AnimeCard key={anime.id} anime={anime as any} />
                   ))}
                 </div>
               </TabsContent>

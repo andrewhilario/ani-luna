@@ -11,28 +11,26 @@ import { Badge } from "@/components/ui/badge";
 import {
   ExternalLink,
   Info,
-  Search,
   Clock,
-  Calendar,
   Sparkles,
   Film,
-  Tv
+  Tv,
+  Star
 } from "lucide-react";
 
 export default function DocumentationPage() {
   const providerInfo = {
     intro:
-      "Welcome to the animekai provider: check out the provider's website @ https://animekai.to",
+      "Welcome to the zoro provider: check out the provider's website @ https://hianime.to",
     routes: [
       "/:query",
-      "/latest-completed",
-      "/new-releases",
-      "/recent-added",
       "/recent-episodes",
-      "/schedule/:date",
-      "/spotlight",
-      "/search-suggestions/:query",
-      "/info",
+      "/top-airing",
+      "/most-popular",
+      "/most-favorite",
+      "/latest-completed",
+      "/recent-added",
+      "/info?id",
       "/watch/:episodeId",
       "/genre/list",
       "/genre/:genre",
@@ -42,34 +40,30 @@ export default function DocumentationPage() {
       "/specials",
       "/tv"
     ],
-    documentation: "https://anime-db-eight.vercel.app/anime/animekai"
+    documentation: "https://docs.consumet.org/#tag/zoro"
   };
 
   // Group routes by category for better organization
   const routeCategories = {
     browse: [
       "/:query",
-      "/latest-completed",
-      "/new-releases",
-      "/recent-added",
       "/recent-episodes",
-      "/spotlight"
+      "/recent-added",
+      "/latest-completed"
     ],
-    search: ["/search-suggestions/:query"],
-    info: ["/info", "/watch/:episodeId"],
+    popular: ["/top-airing", "/most-popular", "/most-favorite"],
+    info: ["/info?id", "/watch/:episodeId"],
     genres: ["/genre/list", "/genre/:genre"],
-    types: ["/movies", "/ona", "/ova", "/specials", "/tv"],
-    schedule: ["/schedule/:date"]
+    types: ["/movies", "/ona", "/ova", "/specials", "/tv"]
   };
 
   // Icon mapping for route categories
   const categoryIcons: Record<string, React.ReactNode> = {
     browse: <Clock className="h-4 w-4" />,
-    search: <Search className="h-4 w-4" />,
+    popular: <Star className="h-4 w-4" />,
     info: <Info className="h-4 w-4" />,
     genres: <Film className="h-4 w-4" />,
-    types: <Tv className="h-4 w-4" />,
-    schedule: <Calendar className="h-4 w-4" />
+    types: <Tv className="h-4 w-4" />
   };
 
   return (
@@ -78,7 +72,7 @@ export default function DocumentationPage() {
         {/* Header */}
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            AnimeKai Provider Documentation
+            Zoro Provider Documentation
           </h1>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-sm">
@@ -88,13 +82,13 @@ export default function DocumentationPage() {
               Anime
             </Badge>
             <Link
-              href="https://animekai.to"
+              href="https://hianime.to"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1"
             >
               <ExternalLink className="h-3 w-3" />
-              animekai.to
+              hianime.to
             </Link>
           </div>
           <p className="text-lg text-muted-foreground">{providerInfo.intro}</p>
@@ -108,7 +102,7 @@ export default function DocumentationPage() {
               Available Routes
             </CardTitle>
             <CardDescription>
-              The following endpoints are available in the AnimeKai provider API
+              The following endpoints are available in the Zoro provider API
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -146,7 +140,7 @@ export default function DocumentationPage() {
           <CardHeader>
             <CardTitle>Example Usage</CardTitle>
             <CardDescription>
-              Here's how to use the AnimeKai provider API
+              Here's how to use the Zoro provider API
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -154,14 +148,14 @@ export default function DocumentationPage() {
               <div>
                 <h3 className="font-medium mb-2">Base URL</h3>
                 <code className="font-mono bg-muted p-2 rounded block">
-                  https://anime-db-eight.vercel.app/anime/animekai
+                  https://api.consumet.org/anime/zoro
                 </code>
               </div>
 
               <div>
                 <h3 className="font-medium mb-2">Search for Anime</h3>
                 <code className="font-mono bg-muted p-2 rounded block">
-                  GET /search/naruto
+                  GET /naruto
                 </code>
               </div>
 
@@ -169,6 +163,13 @@ export default function DocumentationPage() {
                 <h3 className="font-medium mb-2">Get Recent Episodes</h3>
                 <code className="font-mono bg-muted p-2 rounded block">
                   GET /recent-episodes
+                </code>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Get Most Popular</h3>
+                <code className="font-mono bg-muted p-2 rounded block">
+                  GET /most-popular
                 </code>
               </div>
 
@@ -202,13 +203,24 @@ export default function DocumentationPage() {
               </li>
               <li>
                 <Link
-                  href="https://animekai.to"
+                  href="https://hianime.to"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline flex items-center gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  AnimeKai Website
+                  HiAnime Website
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="https://consumet.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Consumet API
                 </Link>
               </li>
             </ul>
