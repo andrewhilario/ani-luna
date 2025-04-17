@@ -9,6 +9,7 @@ import useBookmark from "@/hooks/bookmark";
 import { useEffect } from "react";
 import useAnimeInfo from "@/hooks/info";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnimeCardProps {
   anime: {
@@ -28,6 +29,7 @@ interface AnimeCardProps {
 }
 
 export default function AnimeCard({ anime }: AnimeCardProps) {
+  const { toast } = useToast();
   const { data: session } = useSession();
   const { addBookMark, bookmarkDetail, bookmarkDetailLoading } = useBookmark(
     anime.id
@@ -38,17 +40,25 @@ export default function AnimeCard({ anime }: AnimeCardProps) {
   );
 
   const handleBookmark = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const releaseDate = new Date().toISOString().split("T")[0];
+    if (session) {
+      e.preventDefault();
+      const releaseDate = new Date().toISOString().split("T")[0];
 
-    addBookMark({
-      anime: {
-        anime_id: anime.id,
-        title: anime.title,
-        description: anime.description ?? "",
-        release_date: releaseDate
-      }
-    });
+      addBookMark({
+        anime: {
+          anime_id: anime.id,
+          title: anime.title,
+          description: anime.description ?? "",
+          release_date: releaseDate
+        }
+      });
+    } else {
+      toast({
+        title: "Login Required",
+        description: "Please login to bookmark this anime.",
+        variant: "default"
+      });
+    }
   };
 
   return (

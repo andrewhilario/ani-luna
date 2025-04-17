@@ -5,7 +5,7 @@ export default function useAnimeWatchInfo(id: string) {
   const { data: watchAnime, isLoading: watchAnimeLoading } = useQuery({
     queryKey: ["watch", id],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/servers/${id}`);
+      const response = await fetch(`${API_URL}/watch/${id}`);
 
       const data = await response.json();
 

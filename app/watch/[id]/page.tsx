@@ -1,10 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Hls from "hls.js";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,42 +30,169 @@ export default function WatchPage({ params }: { params: { id: string } }) {
   const [isMuted, setIsMuted] = useState(false);
   const [showComments, setShowComments] = useState(true);
   const [commentText, setCommentText] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const { watchAnime, watchAnimeLoading } = useAnimeWatchInfo(params.id);
-
   const decodedString = decodeURIComponent(params.id);
   const info = decodedString.split("$")[0];
-
-  console.log("Watch Anime:", watchAnime?.[0].url);
   const { anime, animeLoading } = useAnimeInfo(info);
+  const [volume, setVolume] = useState(0.7); // default volume
+  // Initialize HLS player
+  useEffect(() => {
+    let hls: Hls | null = null;
+    const src = watchAnime?.sources?.[0]?.url;
+
+    const proxyUrl = `/api/video-proxy?url=${encodeURIComponent(src)}`;
+
+    const initPlayer = () => {
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = false;
+            // Note: Don't set Referer/Origin here - it will cause errors
+          },
+          maxBufferLength: 30,
+          maxMaxBufferLength: 600,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxBufferHole: 0.5
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            setError(`Player error: ${data.type}`);
+            console.error("HLS Error:", data);
+          }
+        });
+
+        hls.loadSource(proxyUrl);
+        if (videoRef.current) {
+          hls.attachMedia(videoRef.current);
+        } else {
+          console.error("Video element not found");
+        }
+      } else if (
+        videoRef.current &&
+        videoRef.current.canPlayType("application/vnd.apple.mpegurl")
+      ) {
+        // Fallback for Safari
+        if (videoRef.current) {
+          videoRef.current.src = proxyUrl;
+        }
+      }
+    };
+
+    initPlayer();
+
+    return () => {
+      hls?.destroy();
+    };
+  }, [watchAnime?.sources]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateTime = () => setCurrentTime(video.currentTime);
+    const updateDuration = () => setDuration(video.duration);
+
+    video.addEventListener("timeupdate", updateTime);
+    video.addEventListener("loadedmetadata", updateDuration);
+
+    return () => {
+      video.removeEventListener("timeupdate", updateTime);
+      video.removeEventListener("loadedmetadata", updateDuration);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+    }
+  }, [volume]);
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would send the comment to an API
     console.log("Comment submitted:", commentText);
     setCommentText("");
   };
+
+  const handleFullscreen = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if ((video as any).webkitEnterFullscreen) {
+        (video as any).webkitEnterFullscreen(); // Safari
+      } else if ((video as any).msRequestFullscreen) {
+        (video as any).msRequestFullscreen();
+      }
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  if (watchAnimeLoading || animeLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="relative">
         <div className="bg-gray-900 aspect-video relative">
           <video
+            ref={videoRef}
             className="w-full h-full"
-            autoPlay={isPlaying}
+            autoPlay={false}
             muted={isMuted}
             controls={false}
             onClick={togglePlay}
+            crossOrigin="anonymous"
           >
-            <source src={watchAnime?.[0].url} type="video/mp4" />
+            {watchAnime?.subtitles?.map((subtitle: any) => (
+              <track
+                key={subtitle.lang}
+                kind="subtitles"
+                srcLang={subtitle.lang.toLowerCase().split(" ")[0]}
+                src={subtitle.url}
+                label={subtitle.lang}
+                default={subtitle.lang === "English"}
+              />
+            ))}
+            {/* <source
+              src={watchAnime?.sources?.[0]?.url}
+              type="application/x-mpegURL"
+            /> */}
           </video>
 
           {/* Video Controls */}
@@ -104,28 +230,68 @@ export default function WatchPage({ params }: { params: { id: string } }) {
                   )}
                 </button>
                 <Slider
-                  defaultValue={[70]}
+                  value={[volume * 100]}
+                  onValueChange={(val) => {
+                    setVolume(val[0] / 100);
+                    if (videoRef.current) {
+                      videoRef.current.muted = false;
+                    }
+                    setIsMuted(false);
+                  }}
                   max={100}
                   step={1}
                   className="w-24 [&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-white [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-blue-500"
                 />
               </div>
-              <div className="text-sm">14:22 / 23:45</div>
+              <div className="text-sm">{/* Time display would go here */}</div>
               <div className="ml-auto flex items-center gap-4">
+                {watchAnime?.subtitles?.length > 0 && (
+                  <select
+                    onChange={(e) => {
+                      if (!videoRef.current) return;
+                      const tracks = videoRef.current.textTracks;
+                      for (let i = 0; i < tracks.length; i++) {
+                        tracks[i].mode =
+                          tracks[i].language === e.target.value
+                            ? "showing"
+                            : "hidden";
+                      }
+                    }}
+                    className="bg-black/50 text-white text-sm rounded px-2 py-1"
+                  >
+                    <option value="">Subtitles</option>
+                    {watchAnime.subtitles.map((subtitle: any) => (
+                      <option
+                        key={subtitle.lang}
+                        value={subtitle.lang.toLowerCase().split(" ")[0]}
+                      >
+                        {subtitle.lang}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <button>
                   <Settings className="h-5 w-5" />
                 </button>
-                <button>
+                <button onClick={handleFullscreen}>
                   <Maximize className="h-5 w-5" />
                 </button>
               </div>
             </div>
+            {/* <div className="text-sm">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
             <Slider
-              defaultValue={[60]}
-              max={100}
-              step={1}
+              value={[currentTime]}
+              max={duration}
+              step={0.1}
+              onValueChange={(value) => {
+                if (videoRef.current) {
+                  videoRef.current.currentTime = value[0];
+                }
+              }}
               className="w-full [&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-blue-500"
-            />
+            /> */}
           </div>
         </div>
       </div>
@@ -201,40 +367,6 @@ export default function WatchPage({ params }: { params: { id: string } }) {
                       </Button>
                     </form>
                   </div>
-
-                  {/* <div className="space-y-6">
-                    {anime?.comments.map((comment: any) => (
-                      <div key={comment.id} className="flex gap-4">
-                        <Avatar>
-                          <AvatarImage src={comment.user.avatar} />
-                          <AvatarFallback>
-                            {comment.user.name.substring(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">
-                              {comment.user.name}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {comment.time}
-                            </span>
-                          </div>
-                          <p className="text-gray-200 mb-2">{comment.text}</p>
-                          <div className="flex items-center gap-1 text-sm text-gray-400">
-                            <button className="flex items-center gap-1 hover:text-blue-400">
-                              <ThumbsUp className="h-4 w-4" />
-                              <span>{comment.likes}</span>
-                            </button>
-                            <span className="mx-2">•</span>
-                            <button className="hover:text-blue-400">
-                              Reply
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div> */}
                 </>
               )}
             </div>
@@ -243,27 +375,16 @@ export default function WatchPage({ params }: { params: { id: string } }) {
           <div className="w-full lg:w-1/3">
             <h2 className="text-lg font-semibold mb-4">Up Next</h2>
             <div className="space-y-3">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Link
-                  key={i}
-                  href={`/watch/${anime?.id}?episode=${anime?.episode + i + 1}`}
-                >
-                  <div className="bg-gray-900 rounded-lg overflow-hidden flex hover:bg-gray-800 transition-colors">
-                    <div className="w-40 relative">
-                      <img
-                        src={`/placeholder.svg?height=90&width=160`}
-                        alt={`Episode ${anime?.episode + i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                        <Play className="h-8 w-8" />
-                      </div>
-                    </div>
+              {anime?.episodes?.map((episode: any) => (
+                <Link key={episode.id} href={`/watch/${episode.id}`}>
+                  <div className="bg-gray-900 rounded-lg overflow-hidden flex hover:bg-gray-800 transition-colors mb-2">
                     <div className="p-3">
                       <div className="text-sm font-medium mb-1">
-                        Episode {anime?.episode + i + 1}
+                        Episode {episode.number}
                       </div>
-                      <div className="text-xs text-gray-400">23 min</div>
+                      <div className="text-xs text-gray-400">
+                        {episode.duration || "23 min"}
+                      </div>
                     </div>
                   </div>
                 </Link>

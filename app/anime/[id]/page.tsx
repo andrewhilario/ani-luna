@@ -20,15 +20,52 @@ import {
 } from "lucide-react";
 import useAnimeInfo from "@/hooks/info";
 import Header from "@/components/header";
+import useBookmark from "@/hooks/bookmark";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AnimePage({ params }: { params: { id: string } }) {
+  const { data: session } = useSession();
+  const { toast } = useToast();
+
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [filteredEpisodes, setFilteredEpisodes] = useState<any[]>([]);
 
   const { anime, animeLoading } = useAnimeInfo(params.id);
 
+  const { addBookMark, deleteBookmark, bookmarkDetail } = useBookmark(
+    anime?.id
+  );
+
+  // Check if the anime is already bookmarked
+  const isAlreadyBookmarked = bookmarkDetail?.anime?.anime_id === anime?.id;
+
   const toggleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
+    if (session) {
+      if (isBookmarked && session) {
+        deleteBookmark(anime?.id);
+        setIsBookmarked(false);
+      } else {
+        addBookMark({
+          anime: {
+            anime_id: anime?.id,
+            title: anime?.title,
+            description: anime?.description,
+            release_date:
+              anime?.releaseYear ?? new Date().toISOString().split("T")[0]
+          }
+        });
+        setIsBookmarked(true);
+      }
+    } else {
+      toast({
+        title: "Login required",
+        description: "Please log in to bookmark this anime.",
+        variant: "destructive"
+      });
+      return;
+    }
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -36,6 +73,27 @@ export default function AnimePage({ params }: { params: { id: string } }) {
     // In a real app, this would send the comment to an API
     console.log("Comment submitted:", commentText);
     setCommentText("");
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const episodesPerPage = 50;
+
+  const totalPages = Math.ceil(anime?.episodes.length / episodesPerPage);
+  const currentEpisodes = anime?.episodes
+    .slice()
+    .reverse()
+    .slice((currentPage - 1) * episodesPerPage, currentPage * episodesPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   return (
@@ -85,12 +143,12 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                 <Button
                   onClick={toggleBookmark}
                   className={`w-full mt-4 ${
-                    isBookmarked
+                    isBookmarked || isAlreadyBookmarked
                       ? "bg-blue-700"
                       : "bg-blue-600 hover:bg-blue-700"
                   }`}
                 >
-                  {isBookmarked ? (
+                  {isBookmarked || isAlreadyBookmarked ? (
                     <>
                       <BookmarkCheck className="mr-2 h-4 w-4" /> Bookmarked
                     </>
@@ -198,11 +256,11 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                           key={relatedAnime.id}
                           href={`/anime/${relatedAnime.id}`}
                         >
-                          <div className="bg-gray-800 p-3 rounded-lg flex flex-col items-center">
+                          <div className="bg-gray-800 p-3 rounded-lg flex flex-col items-center xl:h-full">
                             <img
                               src={relatedAnime.image}
                               alt={relatedAnime.title}
-                              className="w-full h-auto mb-2 rounded"
+                              className="w-full h-auto xl:h-[250px] xl:object-cover mb-2 rounded"
                             />
                             <h3 className="text-center font-medium">
                               {relatedAnime.title}
@@ -214,8 +272,29 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                   </TabsContent>
 
                   <TabsContent value="episodes" className="mt-6">
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Search episodes..."
+                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+                        onChange={(e) => {
+                          const searchQuery = e.target.value.toLowerCase();
+                          const filteredEpisodes = anime?.episodes
+                            .slice()
+                            .reverse()
+                            .filter((episode: any) =>
+                              episode?.number.toString().includes(searchQuery)
+                            );
+                          setCurrentPage(1);
+                          setFilteredEpisodes(filteredEpisodes);
+                        }}
+                      />
+                    </div>
                     <div className="grid gap-2">
-                      {anime?.episodes?.map((animeInfo: any) => (
+                      {(filteredEpisodes.length > 0
+                        ? filteredEpisodes
+                        : currentEpisodes
+                      )?.map((animeInfo: any) => (
                         <Link
                           key={animeInfo.id}
                           href={`/watch/${animeInfo?.id}`}
@@ -230,6 +309,25 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                           </div>
                         </Link>
                       ))}
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                      <Button
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-gray-300">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <Button
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Next
+                      </Button>
                     </div>
                   </TabsContent>
                 </Tabs>

@@ -65,7 +65,7 @@ export default function useBookmark(id?: string) {
   const { mutate: deleteBookmark } = useMutation({
     mutationKey: ["deleteBookmark"],
     mutationFn: async (id: string) => {
-      const response = await fetch(`${BACKEND_API_URL}/bookmarks/${id}`, {
+      const response = await fetch(`${BACKEND_API_URL}/bookmarks/${id}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${session?.token}`

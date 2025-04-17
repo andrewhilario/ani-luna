@@ -67,7 +67,7 @@ export default function FeaturedAnime() {
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {spotlightLoading ? (
+        {spotlightLoading && animeLoading ? (
           <div className="flex gap-2">
             <div className="w-2 h-2 rounded-full bg-white/30 animate-pulse"></div>
             <div className="w-2 h-2 rounded-full bg-white/30 animate-pulse"></div>
